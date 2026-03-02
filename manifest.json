@@ -1,0 +1,24 @@
+{
+  "name": "Hexadoku — Sudoku 16×16",
+  "short_name": "Hexadoku",
+  "description": "Sudoku 16x16 com os símbolos 1-9 e A-G",
+  "start_url": ".",
+  "display": "standalone",
+  "background_color": "#0d0e14",
+  "theme_color": "#0d0e14",
+  "orientation": "portrait-primary",
+  "icons": [
+    {
+      "src": "icon.png",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "any maskable"
+    },
+    {
+      "src": "icon512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any maskable"
+    }
+  ]
+}
