@@ -42,11 +42,11 @@ Substitui `SEU-USERNAME` pelo teu nome de utilizador do GitHub.
 - No Android: abre no Chrome → aparece banner automático para instalar
 
 ## Funcionalidades
-- Sudoku 16×16 com símbolos 1–9 e A–G
-- Sistema de 5 vidas (erros e dicas consomem vidas)
-- Dicas (custam 1 vida)
-- Modo lápis para anotações
-- Pausa sem perder progresso
-- Tamanho de letra ajustável (A− / A+)
-- Modo alto contraste
-- Funciona offline após a primeira visita
+- 🎯 Sudoku 16×16 com símbolos 1–9 e A–G
+- ❤️ Sistema de 5 vidas (erros e dicas consomem vidas)
+- 💡 Dicas (custam 1 vida)
+- ✏️ Modo lápis para anotações
+- ⏸ Pausa sem perder progresso
+- 🔠 Tamanho de letra ajustável (A− / A+)
+- ◑ Modo alto contraste
+- 📱 Funciona offline após a primeira visita

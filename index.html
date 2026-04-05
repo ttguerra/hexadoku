@@ -1,15 +1,6 @@
 <!DOCTYPE html>
 <html lang="pt">
 <head>
-<!-- Google tag (gtag.js) -->
-<script async src="https://www.googletagmanager.com/gtag/js?id=G-25G2QZFJD7"></script>
-<script>
-  window.dataLayer = window.dataLayer || [];
-  function gtag(){dataLayer.push(arguments);}
-  gtag('js', new Date());
-
-  gtag('config', 'G-25G2QZFJD7');
-</script>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=3.0">
 <title>Hexadoku — Sudoku 16×16</title>
@@ -84,8 +75,6 @@
     padding: 7px 10px;
     flex-wrap: wrap;
     justify-content: center;
-    width: 100%;
-    max-width: 560px;
     animation: fadeDown 0.5s 0.05s ease both;
   }
   .a11y-label {
@@ -244,6 +233,7 @@
   .cell.selected { background: var(--selected-bg) !important; outline: 2px solid var(--accent3); outline-offset: -2px; z-index:2; }
   .cell.highlight { background: var(--highlight-bg); }
   .cell.same-num { background: #222640; }
+  .cell.numpad-hover { background: rgba(107,255,206,0.22) !important; outline: 2px solid rgba(107,255,206,0.7); outline-offset: -2px; color: #6bffce !important; font-size: calc(var(--cell-font) * 1.25) !important; z-index: 1; }
   .cell.error { color: var(--error) !important; }
   .cell.pencil {
     font-size: calc(var(--cell-font) * 0.55);
@@ -311,17 +301,16 @@
   .num-btn.erase { color: var(--accent2); border-color: transparent; font-size: 1.15rem; }
   .num-btn.erase:hover, .num-btn.erase:active { border-color: var(--accent2); }
   .num-btn.pencil-btn {
-    grid-column: 1 / -1;
-    width: 100%;
     color: var(--accent3);
     border-color: transparent;
-    font-size: 0.65rem;
-    letter-spacing: 1px;
+    font-size: 0.6rem;
+    letter-spacing: 0.5px;
     text-transform: uppercase;
     height: 36px;
     font-family: 'Space Mono', 'Courier New', monospace;
   }
   .num-btn.pencil-btn.active { border-color: var(--accent3); background: rgba(107,255,206,0.1); }
+  .num-btn.completed { opacity: 0.25; text-decoration: line-through; pointer-events: none; cursor: default; }
 
   .pause-overlay {
     display: none;
@@ -385,6 +374,58 @@
   .board-shake { animation: shake 0.4s ease; }
   @keyframes fadeDown { from { opacity:0; transform: translateY(-12px); } to { opacity:1; transform: translateY(0); } }
   @keyframes fadeUp { from { opacity:0; transform: translateY(12px); } to { opacity:1; transform: translateY(0); } }
+
+  /* === COMPLETE FLASH === */
+  @keyframes completeFlash {
+    0%   { background: var(--surface); }
+    30%  { background: rgba(232,255,90,0.45); }
+    60%  { background: var(--surface); }
+    80%  { background: rgba(232,255,90,0.25); }
+    100% { background: var(--surface); }
+  }
+  .cell.complete-flash { animation: completeFlash 0.8s ease; }
+
+  /* === CONFETTI === */
+  .confetti-piece {
+    position: fixed;
+    top: -20px;
+    width: 10px;
+    height: 10px;
+    border-radius: 2px;
+    opacity: 0.9;
+    z-index: 9999;
+    pointer-events: none;
+    animation: confettiFall linear forwards;
+  }
+  @keyframes confettiFall {
+    0%   { transform: translateY(0) rotate(0deg); opacity: 0.9; }
+    80%  { opacity: 0.9; }
+    100% { transform: translateY(105vh) rotate(720deg); opacity: 0; }
+  }
+
+  /* === HIGH SCORES MODAL === */
+  #highscores-message { max-width: min(500px, 95vw); width: 95vw; }
+  .hs-tabs { display: flex; flex-wrap: wrap; gap: 4px; margin-bottom: 12px; justify-content: center; }
+  .hs-tab {
+    font-family: 'Space Mono', monospace;
+    font-size: 0.6rem;
+    padding: 4px 8px;
+    border: 1.5px solid var(--border);
+    background: var(--surface2);
+    color: var(--muted);
+    cursor: pointer;
+    border-radius: 4px;
+    transition: all 0.15s;
+  }
+  .hs-tab.active { border-color: var(--accent); color: var(--accent); background: rgba(232,255,90,0.1); }
+  .hs-table { width: 100%; border-collapse: collapse; font-family: 'Space Mono', monospace; font-size: 0.68rem; }
+  .hs-table th { color: var(--muted); font-weight: 700; padding: 4px 6px; border-bottom: 1px solid var(--border); text-align: left; }
+  .hs-table td { padding: 5px 6px; border-bottom: 1px solid var(--border); color: var(--text); }
+  .hs-table tr:last-child td { border-bottom: none; }
+  .hs-table tr:nth-child(1) td:first-child { color: gold; }
+  .hs-table tr:nth-child(2) td:first-child { color: silver; }
+  .hs-table tr:nth-child(3) td:first-child { color: #cd7f32; }
+  .hs-empty { color: var(--muted); font-family: 'Space Mono', monospace; font-size: 0.72rem; padding: 16px 0; }
 </style>
   <!-- PWA -->
   <link rel="manifest" href="manifest.json">
@@ -398,31 +439,26 @@
 
 <header>
   <h1>HEXADOKU</h1>
-  <p>Sudoku 16×16 — símbolos 1–9 e A–G</p>
 </header>
 
 <div class="a11y-bar" role="toolbar" aria-label="Acessibilidade">
-  <span class="a11y-label">Texto:</span>
-  <button class="a11y-btn" onclick="changeFont(-1)" aria-label="Diminuir letra">A−</button>
-  <button class="a11y-btn" onclick="changeFont(1)" aria-label="Aumentar letra">A+</button>
-  <div class="a11y-sep"></div>
-  <button class="a11y-btn" id="btn-contrast" onclick="toggleContrast()" aria-label="Alto contraste">◑ Contraste</button>
-  <div class="a11y-sep"></div>
-  <button class="a11y-btn" id="btn-pause" onclick="togglePause()" aria-label="Pausar">⏸ Pausa</button>
-  <div class="a11y-sep"></div>
-  <button class="a11y-btn" onclick="showTutorial()" aria-label="Ajuda">❓ Ajuda</button>
-</div>
-
-<div class="controls">
-  <select id="difficulty-select" aria-label="Dificuldade">
-    <option value="easy">Fácil</option>
-    <option value="medium" selected>Médio</option>
-    <option value="hard">Difícil</option>
+  <select id="difficulty-select" aria-label="Dificuldade" onchange="saveSettings(); newGame()">
+    <option value="l1" selected>Iniciante</option>
+    <option value="l2">Fácil</option>
+    <option value="l3">Médio-Fácil</option>
+    <option value="l4">Médio</option>
+    <option value="l5">Médio-Difícil</option>
+    <option value="l6">Difícil</option>
+    <option value="l7">Expert</option>
   </select>
-  <button class="btn primary" onclick="newGame()">▶ Novo Jogo</button>
-  <button class="btn" onclick="checkSolution()">✔ Verificar</button>
-  <button class="btn" onclick="showHint()">💡 Dica <span style="font-size:0.55rem;opacity:0.7">(−1❤)</span></button>
-  <button class="btn danger" onclick="resetBoard()">↺ Reiniciar</button>
+  <button class="a11y-btn" id="btn-theme" onclick="cycleTheme()" aria-label="Tema" style="flex-direction:column;gap:1px;font-size:0.55rem;letter-spacing:0px;line-height:1;"><span style="font-size:0.9rem;">🎨</span><span>Tema</span></button>
+  <button class="a11y-btn" id="btn-highscores" onclick="showHighScores()" aria-label="Recordes" style="flex-direction:column;gap:1px;font-size:0.55rem;letter-spacing:0px;line-height:1;"><span style="font-size:0.9rem;">🏆</span><span>Recordes</span></button>
+  <div style="flex:1;"></div>
+  <button class="a11y-btn" id="btn-contrast" onclick="toggleContrast()" aria-label="Alto contraste" style="flex-direction:column;gap:1px;font-size:0.55rem;letter-spacing:0px;line-height:1;"><span style="font-size:0.9rem;">◑</span><span>Contraste</span></button>
+  <div class="a11y-sep"></div>
+  <button class="a11y-btn" id="btn-pause" onclick="togglePause()" aria-label="Pausar" style="flex-direction:column;gap:1px;font-size:0.55rem;letter-spacing:0px;line-height:1;"><span id="btn-pause-icon" style="font-size:0.9rem;">⏸</span><span id="btn-pause-label">Pausa</span></button>
+  <div class="a11y-sep"></div>
+  <button class="a11y-btn" onclick="showTutorial()" aria-label="Ajuda" style="flex-direction:column;gap:1px;font-size:0.55rem;letter-spacing:0px;line-height:1;"><span style="font-size:0.9rem;">❓</span><span>Ajuda</span></button>
 </div>
 
 <div class="info-bar">
@@ -433,9 +469,16 @@
     <span class="heart" id="h3">❤️</span>
     <span class="heart" id="h4">❤️</span>
     <span class="heart" id="h5">❤️</span>
+    <span class="heart" id="h6">❤️</span>
+    <span class="heart" id="h7">❤️</span>
+    <span class="heart" id="h8">❤️</span>
+    <span class="heart" id="h9">❤️</span>
   </div>
   <span>⏱ <b id="timer">00:00</b></span>
   <span>Células: <b id="cells-left">—</b></span>
+  <span>Pontos: <b id="score-display">0</b></span>
+  <span>Melhor: <b id="best-time-display">—</b></span>
+  <span>🔥 <b id="streak-display">0</b></span>
 </div>
 
 <div class="game-area">
@@ -444,24 +487,29 @@
   </div>
   <div class="numpad" role="group" aria-label="Teclado numérico">
     <div class="numpad-title">Inserir valor</div>
-    <button class="num-btn pencil-btn" id="pencil-toggle" onclick="togglePencil()" aria-pressed="false">✏ Modo Lápis</button>
-    <button class="num-btn" onclick="inputNum('1')">1</button>
-    <button class="num-btn" onclick="inputNum('2')">2</button>
-    <button class="num-btn" onclick="inputNum('3')">3</button>
-    <button class="num-btn" onclick="inputNum('4')">4</button>
-    <button class="num-btn" onclick="inputNum('5')">5</button>
-    <button class="num-btn" onclick="inputNum('6')">6</button>
-    <button class="num-btn" onclick="inputNum('7')">7</button>
-    <button class="num-btn" onclick="inputNum('8')">8</button>
-    <button class="num-btn" onclick="inputNum('9')">9</button>
-    <button class="num-btn" onclick="inputNum('A')">A</button>
-    <button class="num-btn" onclick="inputNum('B')">B</button>
-    <button class="num-btn" onclick="inputNum('C')">C</button>
-    <button class="num-btn" onclick="inputNum('D')">D</button>
-    <button class="num-btn" onclick="inputNum('E')">E</button>
-    <button class="num-btn" onclick="inputNum('F')">F</button>
-    <button class="num-btn" onclick="inputNum('G')">G</button>
-    <button class="num-btn erase" onclick="inputNum('')">⌫</button>
+    <button class="num-btn pencil-btn" id="pencil-toggle" onclick="togglePencil()" aria-pressed="false">✏ Lápis</button>
+    <div></div>
+    <button class="num-btn" style="font-size:0.55rem;letter-spacing:0px;flex-direction:column;gap:1px;line-height:1;" onclick="showHint()"><span style="font-size:0.9rem;filter:sepia(1) saturate(5) hue-rotate(5deg);">💡</span><span>Dica</span></button>
+    <button class="num-btn" style="font-size:0.55rem;letter-spacing:0px;flex-direction:column;gap:1px;line-height:1;" onclick="resetBoard()"><span style="font-size:0.9rem;">↺</span><span>Restart</span></button>
+    <button class="num-btn" data-sym="1" onclick="inputNum('1')">1</button>
+    <button class="num-btn" data-sym="2" onclick="inputNum('2')">2</button>
+    <button class="num-btn" data-sym="3" onclick="inputNum('3')">3</button>
+    <button class="num-btn" data-sym="4" onclick="inputNum('4')">4</button>
+    <button class="num-btn" data-sym="5" onclick="inputNum('5')">5</button>
+    <button class="num-btn" data-sym="6" onclick="inputNum('6')">6</button>
+    <button class="num-btn" data-sym="7" onclick="inputNum('7')">7</button>
+    <button class="num-btn" data-sym="8" onclick="inputNum('8')">8</button>
+    <button class="num-btn" data-sym="9" onclick="inputNum('9')">9</button>
+    <button class="num-btn" data-sym="10" onclick="inputNum('10')">A</button>
+    <button class="num-btn" data-sym="11" onclick="inputNum('11')">B</button>
+    <button class="num-btn" data-sym="12" onclick="inputNum('12')">C</button>
+    <button class="num-btn" data-sym="13" onclick="inputNum('13')">D</button>
+    <button class="num-btn" data-sym="14" onclick="inputNum('14')">E</button>
+    <button class="num-btn" data-sym="15" onclick="inputNum('15')">F</button>
+    <button class="num-btn" data-sym="16" onclick="inputNum('16')">G</button>
+    <button class="num-btn erase" style="grid-column:1/3;" onclick="inputNum('')">⌫</button>
+    <button class="num-btn" onclick="changeFont(-1)" aria-label="Diminuir letra">A−</button>
+    <button class="num-btn" onclick="changeFont(1)" aria-label="Aumentar letra">A+</button>
   </div>
 </div>
 
@@ -476,6 +524,8 @@
 <div class="message" id="win-message" role="dialog" aria-modal="true">
   <h2>🎉 Parabéns!</h2>
   <p id="msg-text">Resolveste o Hexadoku!</p>
+  <p id="msg-score" style="margin-top:8px;color:var(--accent);font-family:'Space Mono',monospace;font-size:0.85rem;font-weight:700;"></p>
+  <p id="msg-record" style="margin-top:4px;color:var(--accent3);font-family:'Space Mono',monospace;font-size:0.72rem;"></p>
   <button class="btn primary" onclick="newGame(); hideAllModals()">▶ Novo Jogo</button>
 </div>
 
@@ -483,6 +533,14 @@
   <h2>💀 Game Over</h2>
   <p id="gameover-text">Esgotaste as 5 vidas.</p>
   <button class="btn primary" onclick="newGame(); hideAllModals()">↺ Tentar de Novo</button>
+</div>
+
+<div class="message" id="highscores-message" role="dialog" aria-modal="true"
+     style="border-color:var(--accent); box-shadow:0 0 50px rgba(232,255,90,0.15);">
+  <h2 style="font-size:1.3rem; margin-bottom:12px;">🏆 Recordes</h2>
+  <div class="hs-tabs" id="hs-tabs"></div>
+  <div id="hs-body"></div>
+  <button class="btn primary" onclick="hideAllModals()" style="margin-top:14px">Fechar</button>
 </div>
 
 <div class="message" id="tutorial-message" role="dialog" aria-modal="true"
@@ -503,8 +561,8 @@
 </div>
 
 <script>
-const SYMBOLS = ['1','2','3','4','5','6','7','8','9','A','B','C','D','E','F','G'];
-const N = 16, BOX = 4, MAX_LIVES = 5;
+const SYMBOLS = ['1','2','3','4','5','6','7','8','9','10','11','12','13','14','15','16'];
+const N = 16, BOX = 4, MAX_LIVES = 9;
 
 let solution=[], puzzle=[], userGrid=[], pencilGrid=[];
 let selectedCell=null, pencilMode=false;
@@ -512,6 +570,43 @@ let lives=MAX_LIVES, errors=0, gameOver=false, paused=false;
 let timerInterval=null, seconds=0;
 let fontAdjust=0;
 let highContrast=false;
+let currentTheme='dark';
+let completedNums = new Set();
+
+// ===== DIFFICULTY CONFIG =====
+const DIFF_CONFIG = {
+  l1: { base:5000,  decay:1,   name:'Iniciante'    },
+  l2: { base:8000,  decay:1.2, name:'Fácil'        },
+  l3: { base:12000, decay:1.5, name:'Médio-Fácil'  },
+  l4: { base:17000, decay:2,   name:'Médio'        },
+  l5: { base:23000, decay:2.5, name:'Médio-Difícil'},
+  l6: { base:30000, decay:3,   name:'Difícil'      },
+  l7: { base:40000, decay:4,   name:'Expert'       },
+};
+
+// ===== THEMES =====
+const THEMES = {
+  dark:   null, // use CSS defaults
+  ocean:  {'--bg':'#0a1628','--surface':'#0f2040','--surface2':'#152a50','--accent':'#00d4ff','--accent2':'#ff6b6b','--accent3':'#00ffaa'},
+  sunset: {'--bg':'#1a0a0a','--surface':'#2a1010','--surface2':'#3a1818','--accent':'#ff9f43','--accent2':'#ff6b6b','--accent3':'#ffd700'},
+  forest: {'--bg':'#0a1a0a','--surface':'#0f2a0f','--surface2':'#1a3a1a','--accent':'#69ff47','--accent2':'#ff6b6b','--accent3':'#47ffb2'},
+};
+const THEME_ORDER = ['dark','ocean','sunset','forest'];
+const THEME_DEFAULTS = {'--bg':'#0d0e14','--surface':'#161820','--surface2':'#1e2130','--accent':'#e8ff5a','--accent2':'#ff6b6b','--accent3':'#6bffce'};
+
+function applyTheme(name) {
+  currentTheme = name;
+  const vars = THEMES[name] || {};
+  Object.keys(THEME_DEFAULTS).forEach(k => {
+    document.documentElement.style.setProperty(k, vars[k] || THEME_DEFAULTS[k]);
+  });
+}
+function cycleTheme() {
+  const idx = THEME_ORDER.indexOf(currentTheme);
+  const next = THEME_ORDER[(idx + 1) % THEME_ORDER.length];
+  applyTheme(next);
+  saveSettings();
+}
 
 // ===== RESPONSIVE CELL SIZING =====
 // Dynamically calculates cell size so board always fits the screen.
@@ -576,7 +671,7 @@ function shuffle(a) {
   return a;
 }
 function createPuzzle(sol, diff) {
-  const removals = {easy:72, medium:110, hard:150};
+  const removals = {l1:50, l2:72, l3:95, l4:115, l5:132, l6:148, l7:162};
   let puz = sol.map(r => [...r]);
   let cells = shuffle([...Array(N*N).keys()]);
   let removed = 0, target = removals[diff] || 110;
@@ -587,7 +682,7 @@ function createPuzzle(sol, diff) {
   }
   return puz;
 }
-function valToSym(v) { return v === 0 ? '' : SYMBOLS[v-1]; }
+function valToSym(v) { if (v === 0) return ''; if (v >= 10) return String.fromCharCode(64 + v - 9); return String(v); }
 function symToVal(s) { return s === '' ? 0 : SYMBOLS.indexOf(s)+1; }
 
 // ===== BOARD RENDERING =====
@@ -703,12 +798,35 @@ function inputNum(sym) {
     userGrid[r][c] = val;
     pencilGrid[r][c] = new Set();
     if (val !== 0 && val !== solution[r][c] && !wasWrong) { errors++; loseLife(); }
+    if (val !== 0 && val === solution[r][c]) clearPencilInPeers(r, c, val);
   }
   const cell = getCellEl(r, c);
   updateCellDisplay(cell, r, c);
   highlightCells(r, c);
   updateCellsLeft();
+  saveAutosave();
   if (!gameOver && checkWin()) showWin();
+}
+
+function clearPencilInPeers(r, c, val) {
+  const boxR = Math.floor(r / BOX) * BOX, boxC = Math.floor(c / BOX) * BOX;
+  for (let i = 0; i < N; i++) {
+    // same row and column
+    [{ pr: r, pc: i }, { pr: i, pc: c }].forEach(({ pr, pc }) => {
+      if (pencilGrid[pr][pc] && pencilGrid[pr][pc].has(val)) {
+        pencilGrid[pr][pc].delete(val);
+        updateCellDisplay(getCellEl(pr, pc), pr, pc);
+      }
+    });
+  }
+  // same box
+  for (let dr = 0; dr < BOX; dr++) for (let dc = 0; dc < BOX; dc++) {
+    const pr = boxR + dr, pc = boxC + dc;
+    if (pencilGrid[pr][pc] && pencilGrid[pr][pc].has(val)) {
+      pencilGrid[pr][pc].delete(val);
+      updateCellDisplay(getCellEl(pr, pc), pr, pc);
+    }
+  }
 }
 
 // ===== HINT (costs a life) =====
@@ -722,6 +840,7 @@ function showHint() {
   const {r, c} = empties[Math.floor(Math.random() * empties.length)];
   userGrid[r][c] = solution[r][c];
   pencilGrid[r][c] = new Set();
+  clearPencilInPeers(r, c, solution[r][c]);
   const cell = getCellEl(r, c);
   updateCellDisplay(cell, r, c);
   cell.classList.add('hint-flash');
@@ -741,13 +860,57 @@ function checkWin() {
 }
 function showWin() {
   stopTimer();
+  gameOver = true; // prevent further input
+  clearAutosave();
+  const diff = document.getElementById('difficulty-select').value;
+  const cfg = DIFF_CONFIG[diff] || {base:5000,decay:1};
+
+  // Calculate score
+  const score = Math.max(0, Math.round(cfg.base - (seconds * cfg.decay) - (errors * 500)));
+
+  // Update cumulative stats
+  let stats = loadStats();
+  stats.totalScore = (stats.totalScore || 0) + score;
+  saveStats(stats);
+  updateScoreDisplay();
+
+  // Best time per level
+  let bestTimes = loadBestTimes();
+  let isNewRecord = false;
+  if (!bestTimes[diff] || seconds < bestTimes[diff]) {
+    bestTimes[diff] = seconds;
+    saveBestTimes(bestTimes);
+    isNewRecord = true;
+  }
+  updateBestTimeDisplay();
+
+  // Streak
+  let streak = loadStreak();
+  streak++;
+  saveStreak(streak);
+  updateStreakDisplay();
+
+  // High scores
+  saveHighScore(diff, score, seconds);
+
+  // Format time
   const m = Math.floor(seconds/60).toString().padStart(2,'0');
   const s = (seconds%60).toString().padStart(2,'0');
   document.getElementById('msg-text').textContent = `⏱ ${m}:${s}  |  Erros: ${errors}`;
+  document.getElementById('msg-score').textContent = `+${score.toLocaleString()} pontos`;
+  document.getElementById('msg-record').textContent = isNewRecord ? '⭐ Novo recorde pessoal!' : '';
+
+  // Confetti
+  launchConfetti();
+
   showModal('win-message');
 }
 function showGameOver() {
   stopTimer(); gameOver = true;
+  clearAutosave();
+  // Reset streak on game over
+  saveStreak(0);
+  updateStreakDisplay();
   document.getElementById('board').classList.add('locked');
   for (let r = 0; r < N; r++) {
     for (let c = 0; c < N; c++) {
@@ -778,6 +941,7 @@ function resetBoard() {
   userGrid = Array.from({length:N}, () => Array(N).fill(0));
   pencilGrid = Array.from({length:N}, () => Array.from({length:N}, () => new Set()));
   errors = 0; lives = MAX_LIVES; gameOver = false;
+  completedNums = new Set();
   document.getElementById('board').classList.remove('locked');
   updateLivesDisplay();
   document.querySelectorAll('.cell:not(.given)').forEach(el => {
@@ -792,6 +956,8 @@ function resetBoard() {
 }
 
 function newGame() {
+  clearAutosave();
+  completedNums = new Set();
   const diff = document.getElementById('difficulty-select').value;
   solution = generateSolution();
   puzzle = createPuzzle(solution, diff);
@@ -803,6 +969,7 @@ function newGame() {
   renderBoard();
   startTimer();
   hideAllModals();
+  updateBestTimeDisplay();
   if (paused) togglePause();
 }
 
@@ -821,6 +988,36 @@ function updateCellsLeft() {
     for (let c = 0; c < N; c++)
       if (puzzle[r][c] === 0 && userGrid[r][c] !== solution[r][c]) left++;
   document.getElementById('cells-left').textContent = left;
+  updateNumPad();
+}
+
+function updateNumPad() {
+  const count = new Array(N + 1).fill(0);
+  for (let r = 0; r < N; r++)
+    for (let c = 0; c < N; c++) {
+      const v = puzzle[r][c] !== 0 ? puzzle[r][c] : userGrid[r][c];
+      if (v !== 0 && v === solution[r][c]) count[v]++;
+    }
+  document.querySelectorAll('.num-btn[data-sym]').forEach(btn => {
+    const v = +btn.dataset.sym;
+    const isComplete = count[v] === N;
+    btn.classList.toggle('completed', isComplete);
+    // Flash all cells with this value if newly completed
+    if (isComplete && !completedNums.has(v)) {
+      completedNums.add(v);
+      document.querySelectorAll('.cell').forEach(el => {
+        const r = +el.dataset.r, c = +el.dataset.c;
+        const cv = puzzle[r][c] !== 0 ? puzzle[r][c] : userGrid[r][c];
+        if (cv === v) {
+          el.classList.remove('complete-flash');
+          // Force reflow to restart animation
+          void el.offsetWidth;
+          el.classList.add('complete-flash');
+          setTimeout(() => el.classList.remove('complete-flash'), 800);
+        }
+      });
+    }
+  });
 }
 
 // ===== TIMER =====
@@ -843,13 +1040,44 @@ function togglePause() {
   paused = !paused;
   document.getElementById('pause-overlay').classList.toggle('show', paused);
   document.getElementById('btn-pause').classList.toggle('active', paused);
-  document.getElementById('btn-pause').textContent = paused ? '▶ Continuar' : '⏸ Pausa';
+  document.getElementById('btn-pause-icon').textContent = paused ? '▶' : '⏸';
+  document.getElementById('btn-pause-label').textContent = paused ? 'Continuar' : 'Pausa';
+}
+
+// ===== SETTINGS PERSISTENCE =====
+function saveSettings() {
+  try {
+    localStorage.setItem('hexadoku_settings', JSON.stringify({
+      fontAdjust,
+      highContrast,
+      difficulty: document.getElementById('difficulty-select').value,
+      theme: currentTheme
+    }));
+  } catch(e) {}
+}
+function loadSettings() {
+  try {
+    const s = JSON.parse(localStorage.getItem('hexadoku_settings'));
+    if (!s) return;
+    if (typeof s.fontAdjust === 'number') fontAdjust = s.fontAdjust;
+    if (s.highContrast) {
+      highContrast = true;
+      document.body.classList.add('high-contrast');
+      document.getElementById('btn-contrast').classList.add('active');
+    }
+    if (s.difficulty) {
+      const sel = document.getElementById('difficulty-select');
+      if ([...sel.options].some(o => o.value === s.difficulty)) sel.value = s.difficulty;
+    }
+    if (s.theme && THEMES.hasOwnProperty(s.theme)) applyTheme(s.theme);
+  } catch(e) {}
 }
 
 // ===== FONT ADJUST =====
 function changeFont(dir) {
-  fontAdjust = Math.max(-3, Math.min(6, fontAdjust + dir));
+  fontAdjust = Math.max(-12, Math.min(12, fontAdjust + dir));
   recalcCellSize();
+  saveSettings();
 }
 
 // ===== CONTRAST =====
@@ -857,6 +1085,7 @@ function toggleContrast() {
   highContrast = !highContrast;
   document.body.classList.toggle('high-contrast', highContrast);
   document.getElementById('btn-contrast').classList.toggle('active', highContrast);
+  saveSettings();
 }
 
 // ===== MODALS =====
@@ -866,13 +1095,29 @@ function showModal(id) {
 }
 function hideAllModals() {
   document.getElementById('modal-bg').classList.remove('show');
-  ['win-message','gameover-message','tutorial-message'].forEach(id =>
+  ['win-message','gameover-message','tutorial-message','highscores-message'].forEach(id =>
     document.getElementById(id).classList.remove('show')
   );
 }
 function showTutorial() { hideAllModals(); showModal('tutorial-message'); }
 
 // ===== KEYBOARD =====
+function applyNumpadHover(v) {
+  document.querySelectorAll('.cell').forEach(el => {
+    const r = +el.dataset.r, c = +el.dataset.c;
+    const cv = puzzle[r][c] !== 0 ? puzzle[r][c] : userGrid[r][c];
+    if (cv === v) el.classList.add('numpad-hover');
+    else el.classList.remove('numpad-hover');
+  });
+}
+function clearNumpadHover() {
+  document.querySelectorAll('.cell.numpad-hover').forEach(el => el.classList.remove('numpad-hover'));
+}
+document.querySelectorAll('.num-btn[data-sym]').forEach(btn => {
+  btn.addEventListener('mouseenter', () => applyNumpadHover(+btn.dataset.sym));
+  btn.addEventListener('mouseleave', clearNumpadHover);
+});
+
 document.addEventListener('keydown', e => {
   if (e.key === 'Escape') {
     if (document.getElementById('tutorial-message').classList.contains('show')) { hideAllModals(); return; }
@@ -880,7 +1125,9 @@ document.addEventListener('keydown', e => {
   }
   if (paused || gameOver || !selectedCell) return;
   const key = e.key.toUpperCase();
-  if (SYMBOLS.includes(key)) { inputNum(key); return; }
+  const keyAlias = {'A':'10','B':'11','C':'12','D':'13','E':'14','F':'15','G':'16'};
+  const sym = keyAlias[key] || key;
+  if (SYMBOLS.includes(sym)) { inputNum(sym); return; }
   if (e.key === 'Backspace' || e.key === 'Delete' || e.key === '0') { inputNum(''); return; }
   const {r, c} = selectedCell;
   if (e.key === 'ArrowUp' && r > 0) selectCell(r-1, c);
@@ -894,13 +1141,198 @@ document.addEventListener('keydown', e => {
   }
 });
 
-// ===== INIT =====
-recalcCellSize();
-window.addEventListener('resize', () => { recalcCellSize(); });
-// Also re-run after fonts load (can affect layout)
-document.fonts && document.fonts.ready.then(() => recalcCellSize());
+function syncBarWidth() {
+  const h1 = document.querySelector('header h1');
+  const bar = document.querySelector('.a11y-bar');
+  if (h1 && bar) bar.style.width = h1.offsetWidth + 'px';
+}
 
-newGame();
+// ===== STATS / SCORE / BEST TIMES / STREAK STORAGE =====
+function loadStats() {
+  try { return JSON.parse(localStorage.getItem('hexadoku_stats')) || {}; } catch(e) { return {}; }
+}
+function saveStats(s) {
+  try { localStorage.setItem('hexadoku_stats', JSON.stringify(s)); } catch(e) {}
+}
+function loadBestTimes() {
+  try { return JSON.parse(localStorage.getItem('hexadoku_best_times')) || {}; } catch(e) { return {}; }
+}
+function saveBestTimes(t) {
+  try { localStorage.setItem('hexadoku_best_times', JSON.stringify(t)); } catch(e) {}
+}
+function loadStreak() {
+  try { return parseInt(localStorage.getItem('hexadoku_streak') || '0', 10) || 0; } catch(e) { return 0; }
+}
+function saveStreak(n) {
+  try { localStorage.setItem('hexadoku_streak', String(n)); } catch(e) {}
+}
+
+function updateScoreDisplay() {
+  const stats = loadStats();
+  const total = stats.totalScore || 0;
+  document.getElementById('score-display').textContent = total.toLocaleString();
+}
+function updateBestTimeDisplay() {
+  const diff = document.getElementById('difficulty-select').value;
+  const bestTimes = loadBestTimes();
+  const best = bestTimes[diff];
+  const el = document.getElementById('best-time-display');
+  if (best == null) { el.textContent = '—'; return; }
+  const m = Math.floor(best/60).toString().padStart(2,'0');
+  const s = (best%60).toString().padStart(2,'0');
+  el.textContent = `${m}:${s}`;
+}
+function updateStreakDisplay() {
+  document.getElementById('streak-display').textContent = loadStreak();
+}
+
+// ===== HIGH SCORES =====
+function loadHighScores() {
+  try { return JSON.parse(localStorage.getItem('hexadoku_highscores')) || {}; } catch(e) { return {}; }
+}
+function saveHighScore(diff, score, time) {
+  try {
+    const hs = loadHighScores();
+    if (!hs[diff]) hs[diff] = [];
+    hs[diff].push({ score, time, date: new Date().toISOString() });
+    hs[diff].sort((a,b) => b.score - a.score);
+    hs[diff] = hs[diff].slice(0, 10);
+    localStorage.setItem('hexadoku_highscores', JSON.stringify(hs));
+  } catch(e) {}
+}
+let hsCurrentTab = 'l1';
+function showHighScores() {
+  hideAllModals();
+  renderHighScoresTabs(hsCurrentTab);
+  showModal('highscores-message');
+}
+function renderHighScoresTabs(activeDiff) {
+  hsCurrentTab = activeDiff;
+  const tabsEl = document.getElementById('hs-tabs');
+  tabsEl.innerHTML = '';
+  const hs = loadHighScores();
+  Object.keys(DIFF_CONFIG).forEach(diff => {
+    const btn = document.createElement('button');
+    btn.className = 'hs-tab' + (diff === activeDiff ? ' active' : '');
+    btn.textContent = DIFF_CONFIG[diff].name;
+    btn.onclick = () => renderHighScoresTabs(diff);
+    tabsEl.appendChild(btn);
+  });
+  const body = document.getElementById('hs-body');
+  const entries = (hs[activeDiff] || []).slice(0, 5);
+  if (!entries.length) {
+    body.innerHTML = '<p class="hs-empty">Ainda sem recordes para esta dificuldade.</p>';
+    return;
+  }
+  const medals = ['🥇','🥈','🥉','4.','5.'];
+  let html = '<table class="hs-table"><thead><tr><th>#</th><th>Pontos</th><th>Tempo</th><th>Data</th></tr></thead><tbody>';
+  entries.forEach((e, i) => {
+    const m = Math.floor(e.time/60).toString().padStart(2,'0');
+    const s = (e.time%60).toString().padStart(2,'0');
+    const date = new Date(e.date).toLocaleDateString('pt-PT', {day:'2-digit',month:'2-digit',year:'2-digit'});
+    html += `<tr><td>${medals[i]||i+1}</td><td>${e.score.toLocaleString()}</td><td>${m}:${s}</td><td>${date}</td></tr>`;
+  });
+  html += '</tbody></table>';
+  body.innerHTML = html;
+}
+
+// ===== CONFETTI =====
+function launchConfetti() {
+  const colors = ['#e8ff5a','#ff6b6b','#6bffce','#ff9f43','#00d4ff','#a29bfe','#fd79a8','#55efc4'];
+  for (let i = 0; i < 40; i++) {
+    const piece = document.createElement('div');
+    piece.className = 'confetti-piece';
+    piece.style.left = Math.random() * 100 + 'vw';
+    piece.style.width = (8 + Math.random() * 8) + 'px';
+    piece.style.height = (8 + Math.random() * 8) + 'px';
+    piece.style.background = colors[Math.floor(Math.random() * colors.length)];
+    piece.style.borderRadius = Math.random() > 0.5 ? '50%' : '2px';
+    const dur = 1.8 + Math.random() * 1.4;
+    const delay = Math.random() * 0.8;
+    piece.style.animationDuration = dur + 's';
+    piece.style.animationDelay = delay + 's';
+    document.body.appendChild(piece);
+    setTimeout(() => piece.remove(), (dur + delay + 0.2) * 1000);
+  }
+}
+
+// ===== AUTO-SAVE =====
+function saveAutosave() {
+  if (gameOver) return;
+  try {
+    const diff = document.getElementById('difficulty-select').value;
+    const pencilArr = pencilGrid.map(row => row.map(s => [...s]));
+    localStorage.setItem('hexadoku_autosave', JSON.stringify({
+      puzzle: puzzle.map(r => [...r]),
+      userGrid: userGrid.map(r => [...r]),
+      pencilGrid: pencilArr,
+      solution: solution.map(r => [...r]),
+      seconds,
+      errors,
+      lives,
+      difficulty: diff
+    }));
+  } catch(e) {}
+}
+function clearAutosave() {
+  try { localStorage.removeItem('hexadoku_autosave'); } catch(e) {}
+}
+function restoreAutosave() {
+  try {
+    const raw = localStorage.getItem('hexadoku_autosave');
+    if (!raw) return false;
+    const data = JSON.parse(raw);
+    if (!data || !data.puzzle || !data.solution) return false;
+    puzzle = data.puzzle;
+    solution = data.solution;
+    userGrid = data.userGrid;
+    pencilGrid = data.pencilGrid.map(row => row.map(arr => new Set(arr)));
+    seconds = data.seconds || 0;
+    errors = data.errors || 0;
+    lives = data.lives != null ? data.lives : MAX_LIVES;
+    completedNums = new Set();
+    gameOver = false;
+    // Restore difficulty selector
+    if (data.difficulty) {
+      const sel = document.getElementById('difficulty-select');
+      if ([...sel.options].some(o => o.value === data.difficulty)) sel.value = data.difficulty;
+    }
+    document.getElementById('board').classList.remove('locked');
+    updateLivesDisplay();
+    renderBoard();
+    // Restore timer (start from saved seconds)
+    stopTimer();
+    document.getElementById('timer').textContent =
+      Math.floor(seconds/60).toString().padStart(2,'0') + ':' +
+      (seconds%60).toString().padStart(2,'0');
+    timerInterval = setInterval(() => {
+      if (!paused) {
+        seconds++;
+        document.getElementById('timer').textContent =
+          Math.floor(seconds/60).toString().padStart(2,'0') + ':' +
+          (seconds%60).toString().padStart(2,'0');
+      }
+    }, 1000);
+    updateBestTimeDisplay();
+    return true;
+  } catch(e) { return false; }
+}
+
+// ===== INIT =====
+loadSettings();
+recalcCellSize();
+window.addEventListener('resize', () => { recalcCellSize(); syncBarWidth(); });
+// Also re-run after fonts load (can affect layout)
+document.fonts && document.fonts.ready.then(() => { recalcCellSize(); syncBarWidth(); });
+
+updateScoreDisplay();
+updateStreakDisplay();
+
+// Try to restore autosave, else start new game
+if (!restoreAutosave()) {
+  newGame();
+}
+syncBarWidth();
 
 // Show tutorial on first visit
 try {
