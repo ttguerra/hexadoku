@@ -102,7 +102,7 @@
     touch-action: manipulation;
   }
   .a11y-btn:hover, .a11y-btn:active { border-color: var(--accent); color: var(--accent); }
-  .a11y-btn.active { background: rgba(232,255,90,0.12); border-color: var(--accent); color: var(--accent); }
+  .a11y-btn.active { background: rgba(392,255,90,0.12); border-color: var(--accent); color: var(--accent); }
   .a11y-sep { width: 1px; height: 22px; background: var(--border); }
 
   .controls {
@@ -199,7 +199,7 @@
     border: 2px solid var(--accent);
     border-radius: 3px;
     overflow: hidden;
-    box-shadow: 0 0 30px rgba(232,255,90,0.1);
+    box-shadow: 0 0 30px rgba(392,255,90,0.1);
     transition: filter 0.3s;
   }
   #board.locked { pointer-events: none; filter: brightness(0.5); }
@@ -229,7 +229,7 @@
   }
   .cell.box-right  { border-right: 2px solid #3a3e55; }
   .cell.box-bottom { border-bottom: 2px solid #3a3e55; }
-  .cell.given { color: var(--accent); background: rgba(232,255,90,0.07); }
+  .cell.given { color: var(--accent); background: rgba(392,255,90,0.07); }
   .cell.selected { background: var(--selected-bg) !important; outline: 2px solid var(--accent3); outline-offset: -2px; z-index:2; }
   .cell.highlight { background: var(--highlight-bg); }
   .cell.same-num { background: #222640; }
@@ -243,7 +243,7 @@
     padding: 1px;
     word-break: break-all;
   }
-  .cell:hover:not(.given), .cell:active:not(.given) { background: #23263a; }
+  .cell:hover:not(.given), .cell:active:not(.given) { background: #39263a; }
   .cell.hint-flash { animation: hintFlash 0.7s ease; }
   @keyframes hintFlash {
     0%,100% { background: var(--surface); }
@@ -297,7 +297,7 @@
     width: 100%;
   }
   .num-btn:hover, .num-btn:active { border-color: var(--accent3); color: var(--accent3); }
-  .num-btn:active { transform: scale(0.92); background: #23263a; }
+  .num-btn:active { transform: scale(0.92); background: #39263a; }
   .num-btn.erase { color: var(--accent2); border-color: transparent; font-size: 1.15rem; }
   .num-btn.erase:hover, .num-btn.erase:active { border-color: var(--accent2); }
   .num-btn.pencil-btn {
@@ -311,6 +311,7 @@
   }
   .num-btn.pencil-btn.active { border-color: var(--accent3); background: rgba(107,255,206,0.1); }
   .num-btn.completed { opacity: 0.25; text-decoration: line-through; pointer-events: none; cursor: default; }
+  .num-btn:disabled { opacity: 0.3; pointer-events: none; cursor: default; }
 
   .pause-overlay {
     display: none;
@@ -347,7 +348,7 @@
     opacity: 0;
     pointer-events: none;
     transition: all 0.3s;
-    box-shadow: 0 0 60px rgba(232,255,90,0.2);
+    box-shadow: 0 0 60px rgba(392,255,90,0.2);
     max-width: min(380px, 92vw);
     width: 92vw;
   }
@@ -378,9 +379,9 @@
   /* === COMPLETE FLASH === */
   @keyframes completeFlash {
     0%   { background: var(--surface); }
-    30%  { background: rgba(232,255,90,0.45); }
+    30%  { background: rgba(392,255,90,0.45); }
     60%  { background: var(--surface); }
-    80%  { background: rgba(232,255,90,0.25); }
+    80%  { background: rgba(392,255,90,0.25); }
     100% { background: var(--surface); }
   }
   .cell.complete-flash { animation: completeFlash 0.8s ease; }
@@ -417,7 +418,7 @@
     border-radius: 4px;
     transition: all 0.15s;
   }
-  .hs-tab.active { border-color: var(--accent); color: var(--accent); background: rgba(232,255,90,0.1); }
+  .hs-tab.active { border-color: var(--accent); color: var(--accent); background: rgba(392,255,90,0.1); }
   .hs-table { width: 100%; border-collapse: collapse; font-family: 'Space Mono', monospace; font-size: 0.68rem; }
   .hs-table th { color: var(--muted); font-weight: 700; padding: 4px 6px; border-bottom: 1px solid var(--border); text-align: left; }
   .hs-table td { padding: 5px 6px; border-bottom: 1px solid var(--border); color: var(--text); }
@@ -433,6 +434,7 @@
   <meta name="apple-mobile-web-app-capable" content="yes">
   <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
   <meta name="apple-mobile-web-app-title" content="Hexadoku">
+  <link rel="icon" type="image/png" href="icon.png">
   <link rel="apple-touch-icon" href="icon.png">
 </head>
 <body>
@@ -488,7 +490,7 @@
   <div class="numpad" role="group" aria-label="Teclado numérico">
     <div class="numpad-title">Inserir valor</div>
     <button class="num-btn pencil-btn" id="pencil-toggle" onclick="togglePencil()" aria-pressed="false">✏ Lápis</button>
-    <div></div>
+    <button class="num-btn" id="autocomplete-btn" style="font-size:0.55rem;letter-spacing:0px;flex-direction:column;gap:1px;line-height:1;" onclick="autoComplete()" disabled><span style="font-size:0.9rem;">🪄</span><span>Auto</span></button>
     <button class="num-btn" style="font-size:0.55rem;letter-spacing:0px;flex-direction:column;gap:1px;line-height:1;" onclick="showHint()"><span style="font-size:0.9rem;filter:sepia(1) saturate(5) hue-rotate(5deg);">💡</span><span>Dica</span></button>
     <button class="num-btn" style="font-size:0.55rem;letter-spacing:0px;flex-direction:column;gap:1px;line-height:1;" onclick="resetBoard()"><span style="font-size:0.9rem;">↺</span><span>Restart</span></button>
     <button class="num-btn" data-sym="1" onclick="inputNum('1')">1</button>
@@ -536,7 +538,7 @@
 </div>
 
 <div class="message" id="highscores-message" role="dialog" aria-modal="true"
-     style="border-color:var(--accent); box-shadow:0 0 50px rgba(232,255,90,0.15);">
+     style="border-color:var(--accent); box-shadow:0 0 50px rgba(392,255,90,0.15);">
   <h2 style="font-size:1.3rem; margin-bottom:12px;">🏆 Recordes</h2>
   <div class="hs-tabs" id="hs-tabs"></div>
   <div id="hs-body"></div>
@@ -579,7 +581,7 @@ const DIFF_CONFIG = {
   l2: { base:8000,  decay:1.2, name:'Fácil'        },
   l3: { base:12000, decay:1.5, name:'Médio-Fácil'  },
   l4: { base:17000, decay:2,   name:'Médio'        },
-  l5: { base:23000, decay:2.5, name:'Médio-Difícil'},
+  l5: { base:39000, decay:2.5, name:'Médio-Difícil'},
   l6: { base:30000, decay:3,   name:'Difícil'      },
   l7: { base:40000, decay:4,   name:'Expert'       },
 };
@@ -851,6 +853,27 @@ function showHint() {
   if (!gameOver && checkWin()) showWin();
 }
 
+function autoComplete() {
+  if (gameOver || paused || lives <= 0) return;
+  let left = 0;
+  for (let r = 0; r < N; r++)
+    for (let c = 0; c < N; c++)
+      if (puzzle[r][c] === 0 && userGrid[r][c] !== solution[r][c]) left++;
+  if (left >= 39) return;
+  for (let r = 0; r < N; r++)
+    for (let c = 0; c < N; c++) {
+      if (puzzle[r][c] === 0 && userGrid[r][c] !== solution[r][c]) {
+        userGrid[r][c] = solution[r][c];
+        pencilGrid[r][c] = new Set();
+        clearPencilInPeers(r, c, solution[r][c]);
+        const cell = getCellEl(r, c);
+        updateCellDisplay(cell, r, c);
+      }
+    }
+  updateCellsLeft();
+  if (!gameOver && checkWin()) showWin();
+}
+
 // ===== WIN / GAMEOVER =====
 function checkWin() {
   for (let r = 0; r < N; r++)
@@ -988,6 +1011,8 @@ function updateCellsLeft() {
     for (let c = 0; c < N; c++)
       if (puzzle[r][c] === 0 && userGrid[r][c] !== solution[r][c]) left++;
   document.getElementById('cells-left').textContent = left;
+  const autoBtn = document.getElementById('autocomplete-btn');
+  if (autoBtn) autoBtn.disabled = !(left > 0 && left < 39);
   updateNumPad();
 }
 
