@@ -22,6 +22,8 @@
     /* Set dynamically by JS - safe defaults for very small screens */
     --cell-size: 22px;
     --cell-font: 11px;
+    /* Scales the surrounding UI (numpad, info bar) together with the board */
+    --ui-scale: 1;
   }
   * { margin:0; padding:0; box-sizing:border-box; }
 
@@ -102,8 +104,16 @@
     touch-action: manipulation;
   }
   .a11y-btn:hover, .a11y-btn:active { border-color: var(--accent); color: var(--accent); }
-  .a11y-btn.active { background: rgba(392,255,90,0.12); border-color: var(--accent); color: var(--accent); }
+  .a11y-btn.active { background: rgba(232,255,90,0.12); border-color: var(--accent); color: var(--accent); }
   .a11y-sep { width: 1px; height: 22px; background: var(--border); }
+  .zoom-group { display: flex; gap: 4px; align-items: center; }
+  .zoom-group .zoom-reset {
+    min-width: 52px;
+    font-size: 0.62rem;
+    color: var(--muted);
+    background: transparent;
+    border-color: transparent;
+  }
 
   .controls {
     display: flex;
@@ -155,17 +165,20 @@
     gap: 14px;
     margin-bottom: 10px;
     font-family: 'Space Mono', 'Courier New', monospace;
-    font-size: 0.75rem;
+    /* Grows with zoom, but capped — at full zoom on a phone the unclamped
+       size overflows the viewport and gets clipped by body{overflow-x:hidden}. */
+    font-size: calc(0.75rem * min(var(--ui-scale), 1.3));
     color: var(--muted);
     align-items: center;
     flex-wrap: wrap;
     justify-content: center;
+    max-width: 100%;
     animation: fadeDown 0.5s 0.15s ease both;
   }
-  .lives-bar { display: flex; align-items: center; gap: 4px; }
-  .lives-bar .label { margin-right: 3px; font-size: 0.7rem; }
+  .lives-bar { display: flex; align-items: center; gap: 4px; flex-wrap: wrap; justify-content: center; }
+  .lives-bar .label { margin-right: 3px; font-size: calc(0.7rem * min(var(--ui-scale), 1.3)); }
   .heart {
-    font-size: 1.25rem;
+    font-size: calc(1.25rem * min(var(--ui-scale), 1.3));
     transition: all 0.3s;
     filter: drop-shadow(0 0 3px rgba(255,80,80,0.7));
     cursor: default;
@@ -190,16 +203,27 @@
     animation: fadeUp 0.5s 0.2s ease both;
     width: 100%;
   }
-  .board-wrap { position: relative; }
+  /* When the board is zoomed past the viewport it pans inside its own
+     container, instead of being clipped by body{overflow-x:hidden}. */
+  .board-wrap {
+    position: relative;
+    max-width: 100%;
+    overflow: auto;
+    -webkit-overflow-scrolling: touch;
+    overscroll-behavior: contain;
+  }
 
   #board {
     display: grid;
     grid-template-columns: repeat(16, var(--cell-size));
     grid-template-rows: repeat(16, var(--cell-size));
+    /* Shrink-to-fit, so a zoomed board makes .board-wrap scrollable
+       instead of silently overflowing past the right-hand columns. */
+    width: max-content;
     border: 2px solid var(--accent);
     border-radius: 3px;
     overflow: hidden;
-    box-shadow: 0 0 30px rgba(392,255,90,0.1);
+    box-shadow: 0 0 30px rgba(232,255,90,0.1);
     transition: filter 0.3s;
   }
   #board.locked { pointer-events: none; filter: brightness(0.5); }
@@ -229,7 +253,7 @@
   }
   .cell.box-right  { border-right: 2px solid #3a3e55; }
   .cell.box-bottom { border-bottom: 2px solid #3a3e55; }
-  .cell.given { color: var(--accent); background: rgba(392,255,90,0.07); }
+  .cell.given { color: var(--accent); background: rgba(232,255,90,0.07); }
   .cell.selected { background: var(--selected-bg) !important; outline: 2px solid var(--accent3); outline-offset: -2px; z-index:2; }
   .cell.highlight { background: var(--highlight-bg); }
   .cell.same-num { background: #222640; }
@@ -250,6 +274,14 @@
     40% { background: rgba(107,255,206,0.25); }
   }
 
+  @keyframes autoFill {
+    0%   { opacity:0; transform: scale(0.3) rotate(-15deg); }
+    60%  { opacity:1; transform: scale(1.25) rotate(4deg); }
+    80%  { transform: scale(0.95) rotate(-2deg); }
+    100% { opacity:1; transform: scale(1) rotate(0deg); }
+  }
+  .cell.auto-fill { animation: autoFill 0.4s cubic-bezier(0.34,1.56,0.64,1) both; }
+
   body.high-contrast .cell.given { color: #ffffff !important; background: #111; font-weight: 900; }
   body.high-contrast .cell { color: #d0e8ff; background: #0a0a12; border-color: #555; }
   body.high-contrast .cell.highlight { background: #181828; }
@@ -266,11 +298,11 @@
     background: var(--surface);
     border: 1.5px solid var(--border);
     border-radius: 8px;
-    width: min(260px, 95vw);
+    width: min(calc(260px * var(--ui-scale)), 95vw);
   }
   .numpad-title {
     grid-column: 1 / -1;
-    font-size: 0.6rem;
+    font-size: calc(0.6rem * var(--ui-scale));
     letter-spacing: 2px;
     text-transform: uppercase;
     color: var(--muted);
@@ -278,9 +310,9 @@
     margin-bottom: 2px;
   }
   .num-btn {
-    height: 48px;
+    height: calc(48px * var(--ui-scale));
     font-family: 'Space Mono', 'Courier New', 'Lucida Console', monospace;
-    font-size: 1rem;
+    font-size: calc(1rem * var(--ui-scale));
     font-weight: 700;
     border: 1.5px solid var(--border);
     background: var(--surface2);
@@ -303,10 +335,10 @@
   .num-btn.pencil-btn {
     color: var(--accent3);
     border-color: transparent;
-    font-size: 0.6rem;
+    font-size: calc(0.6rem * var(--ui-scale));
     letter-spacing: 0.5px;
     text-transform: uppercase;
-    height: 36px;
+    height: calc(36px * var(--ui-scale));
     font-family: 'Space Mono', 'Courier New', monospace;
   }
   .num-btn.pencil-btn.active { border-color: var(--accent3); background: rgba(107,255,206,0.1); }
@@ -348,7 +380,7 @@
     opacity: 0;
     pointer-events: none;
     transition: all 0.3s;
-    box-shadow: 0 0 60px rgba(392,255,90,0.2);
+    box-shadow: 0 0 60px rgba(232,255,90,0.2);
     max-width: min(380px, 92vw);
     width: 92vw;
   }
@@ -379,9 +411,9 @@
   /* === COMPLETE FLASH === */
   @keyframes completeFlash {
     0%   { background: var(--surface); }
-    30%  { background: rgba(392,255,90,0.45); }
+    30%  { background: rgba(232,255,90,0.45); }
     60%  { background: var(--surface); }
-    80%  { background: rgba(392,255,90,0.25); }
+    80%  { background: rgba(232,255,90,0.25); }
     100% { background: var(--surface); }
   }
   .cell.complete-flash { animation: completeFlash 0.8s ease; }
@@ -418,7 +450,7 @@
     border-radius: 4px;
     transition: all 0.15s;
   }
-  .hs-tab.active { border-color: var(--accent); color: var(--accent); background: rgba(392,255,90,0.1); }
+  .hs-tab.active { border-color: var(--accent); color: var(--accent); background: rgba(232,255,90,0.1); }
   .hs-table { width: 100%; border-collapse: collapse; font-family: 'Space Mono', monospace; font-size: 0.68rem; }
   .hs-table th { color: var(--muted); font-weight: 700; padding: 4px 6px; border-bottom: 1px solid var(--border); text-align: left; }
   .hs-table td { padding: 5px 6px; border-bottom: 1px solid var(--border); color: var(--text); }
@@ -434,8 +466,8 @@
   <meta name="apple-mobile-web-app-capable" content="yes">
   <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
   <meta name="apple-mobile-web-app-title" content="Hexadoku">
-  <link rel="icon" type="image/png" href="icon.png">
-  <link rel="apple-touch-icon" href="icon.png">
+  <link rel="icon" type="image/png" href="icon-192.png">
+  <link rel="apple-touch-icon" sizes="180x180" href="apple-touch-icon.png">
 </head>
 <body>
 
@@ -455,6 +487,13 @@
   </select>
   <button class="a11y-btn" id="btn-theme" onclick="cycleTheme()" aria-label="Tema" style="flex-direction:column;gap:1px;font-size:0.55rem;letter-spacing:0px;line-height:1;"><span style="font-size:0.9rem;">🎨</span><span>Tema</span></button>
   <button class="a11y-btn" id="btn-highscores" onclick="showHighScores()" aria-label="Recordes" style="flex-direction:column;gap:1px;font-size:0.55rem;letter-spacing:0px;line-height:1;"><span style="font-size:0.9rem;">🏆</span><span>Recordes</span></button>
+  <div class="a11y-sep"></div>
+  <div class="zoom-group" role="group" aria-label="Tamanho do jogo">
+    <button class="a11y-btn" onclick="changeFont(-1)" aria-label="Diminuir tamanho">A−</button>
+    <button class="a11y-btn zoom-reset" id="zoom-label" onclick="resetZoom()"
+            aria-label="Repor tamanho" title="Repor tamanho">100%</button>
+    <button class="a11y-btn" onclick="changeFont(1)" aria-label="Aumentar tamanho">A+</button>
+  </div>
   <div style="flex:1;"></div>
   <button class="a11y-btn" id="btn-contrast" onclick="toggleContrast()" aria-label="Alto contraste" style="flex-direction:column;gap:1px;font-size:0.55rem;letter-spacing:0px;line-height:1;"><span style="font-size:0.9rem;">◑</span><span>Contraste</span></button>
   <div class="a11y-sep"></div>
@@ -533,12 +572,12 @@
 
 <div class="message gameover" id="gameover-message" role="dialog" aria-modal="true">
   <h2>💀 Game Over</h2>
-  <p id="gameover-text">Esgotaste as 5 vidas.</p>
+  <p id="gameover-text">Esgotaste as 9 vidas.</p>
   <button class="btn primary" onclick="newGame(); hideAllModals()">↺ Tentar de Novo</button>
 </div>
 
 <div class="message" id="highscores-message" role="dialog" aria-modal="true"
-     style="border-color:var(--accent); box-shadow:0 0 50px rgba(392,255,90,0.15);">
+     style="border-color:var(--accent); box-shadow:0 0 50px rgba(232,255,90,0.15);">
   <h2 style="font-size:1.3rem; margin-bottom:12px;">🏆 Recordes</h2>
   <div class="hs-tabs" id="hs-tabs"></div>
   <div id="hs-body"></div>
@@ -551,12 +590,13 @@
     <h2>📖 Como Jogar</h2>
     <ul>
       <li><span class="icon">🎯</span><span>Preenche cada linha, coluna e bloco 4×4 com os símbolos <b>1–9</b> e <b>A–G</b> — cada um exatamente uma vez.</span></li>
-      <li><span class="icon">❤️</span><span>Tens <b>5 vidas</b>. Cada erro ou dica consome uma vida.</span></li>
+      <li><span class="icon">❤️</span><span>Tens <b>9 vidas</b>. Cada erro ou dica consome uma vida.</span></li>
       <li><span class="icon">💡</span><span>O botão <b>Dica</b> revela uma célula correta, mas custa 1 vida!</span></li>
       <li><span class="icon">✏️</span><span><b>Modo Lápis</b>: escreve hipóteses em pequeno sem confirmar a resposta.</span></li>
-      <li><span class="icon">🔠</span><span>Botões <b>A− / A+</b> para ajustar o tamanho das letras.</span></li>
+      <li><span class="icon">🔠</span><span>Botões <b>A− / A+</b> no topo aumentam o tabuleiro e as letras até 250%. Toca na percentagem para repor.</span></li>
       <li><span class="icon">◑</span><span><b>Alto Contraste</b> para melhor visibilidade.</span></li>
       <li><span class="icon">⏸</span><span>Podes <b>pausar</b> o jogo sem perder o progresso.</span></li>
+      <li><span class="icon">💾</span><span>O jogo <b>guarda-se sozinho</b>. Podes fechar o browser e continuar depois exatamente onde ficaste.</span></li>
     </ul>
   </div>
   <button class="btn primary" onclick="hideAllModals()" style="margin-top:16px">Percebido! ▶</button>
@@ -574,6 +614,8 @@ let fontAdjust=0;
 let highContrast=false;
 let currentTheme='dark';
 let completedNums = new Set();
+let autoCompleting = false;
+let suppressCompleteFlash = false;
 
 // ===== DIFFICULTY CONFIG =====
 const DIFF_CONFIG = {
@@ -611,31 +653,65 @@ function cycleTheme() {
 }
 
 // ===== RESPONSIVE CELL SIZING =====
-// Dynamically calculates cell size so board always fits the screen.
+// Dynamically calculates cell size so the board always fits the screen.
 // This is the key fix for mobile — no vw units that break on small screens.
+// fontAdjust is a zoom step on top of that auto-fit; if the player zooms past
+// the viewport the board pans inside .board-wrap rather than being clipped.
+const ZOOM_STEP = 0.08;
+const ZOOM_MIN = 0.7, ZOOM_MAX = 2.5;
+
+function zoomFactor() {
+  return Math.max(ZOOM_MIN, Math.min(ZOOM_MAX, 1 + fontAdjust * ZOOM_STEP));
+}
+
 function recalcCellSize() {
   // Use the actual available width (screen or window, whichever is smaller)
   const availW = Math.min(
     window.innerWidth || document.documentElement.clientWidth,
     screen.width || 9999
   ) - 20; // 20px for body padding
+  const availH = window.innerHeight || document.documentElement.clientHeight || 800;
 
-  // 16 cells fit in available width, board has 4px border total
-  let cs = Math.floor((availW - 4) / 16);
-
-  // Desktop: cap at 52px per cell
-  cs = Math.min(cs, 52);
+  let cs;
+  if (availW >= 900) {
+    // Desktop: board and numpad sit side by side, and the whole thing should
+    // fit on screen without scrolling — so fit to height as well as width.
+    const boardW = availW - 300;                       // numpad column + gap
+    let byHeight = Infinity;
+    // Only trust the height when the viewport reports a plausible one —
+    // innerHeight can be 0 on a page that hasn't been painted yet, which
+    // would otherwise collapse the board to its minimum size.
+    if (availH > 400) {
+      // Measure the real header/toolbar height rather than guessing at it.
+      const ga = document.querySelector('.game-area');
+      const topChrome = ga ? (ga.getBoundingClientRect().top + (window.scrollY || 0)) : 190;
+      byHeight = Math.floor((availH - topChrome - 36 - 4) / 16);
+    }
+    cs = Math.min(Math.floor((boardW - 4) / 16), byHeight, 80);
+  } else {
+    // Phone / tablet: fit the width, page scrolls vertically as before.
+    cs = Math.min(Math.floor((availW - 4) / 16), 56);
+  }
   // Always at least 18px so text can render
   cs = Math.max(cs, 18);
 
-  // Apply user font size adjustments (each step = +/- 2px per cell)
-  cs = Math.max(16, Math.min(72, cs + fontAdjust * 2));
+  // Apply the player's zoom
+  const z = zoomFactor();
+  cs = Math.max(14, Math.min(150, Math.round(cs * z)));
 
   // Font: ~55% of cell size, minimum 9px
   const cf = Math.max(9, Math.round(cs * 0.55));
 
-  document.documentElement.style.setProperty('--cell-size', cs + 'px');
-  document.documentElement.style.setProperty('--cell-font', cf + 'px');
+  // Surrounding UI only ever grows, so small screens keep their compact layout
+  const ui = Math.max(1, Math.min(1.8, z));
+
+  const root = document.documentElement.style;
+  root.setProperty('--cell-size', cs + 'px');
+  root.setProperty('--cell-font', cf + 'px');
+  root.setProperty('--ui-scale', ui.toFixed(3));
+
+  const label = document.getElementById('zoom-label');
+  if (label) label.textContent = Math.round(z * 100) + '%';
 }
 
 // ===== SUDOKU GENERATOR (instant, no recursion) =====
@@ -850,28 +926,63 @@ function showHint() {
   selectCell(r, c);
   updateCellsLeft();
   loseLife(); // hint costs 1 life
+  saveAutosave();
   if (!gameOver && checkWin()) showWin();
 }
 
 function autoComplete() {
   if (gameOver || paused || lives <= 0) return;
-  let left = 0;
+  const empties = [];
   for (let r = 0; r < N; r++)
     for (let c = 0; c < N; c++)
-      if (puzzle[r][c] === 0 && userGrid[r][c] !== solution[r][c]) left++;
-  if (left >= 39) return;
-  for (let r = 0; r < N; r++)
-    for (let c = 0; c < N; c++) {
-      if (puzzle[r][c] === 0 && userGrid[r][c] !== solution[r][c]) {
-        userGrid[r][c] = solution[r][c];
-        pencilGrid[r][c] = new Set();
-        clearPencilInPeers(r, c, solution[r][c]);
-        const cell = getCellEl(r, c);
-        updateCellDisplay(cell, r, c);
+      if (puzzle[r][c] === 0 && userGrid[r][c] !== solution[r][c]) empties.push({r, c});
+  if (empties.length === 0 || empties.length >= 53) return;
+
+  // Shuffle so fills appear in a pleasing random order
+  for (let i = empties.length - 1; i > 0; i--) {
+    const j = Math.floor(Math.random() * (i + 1));
+    [empties[i], empties[j]] = [empties[j], empties[i]];
+  }
+
+  document.getElementById('autocomplete-btn').disabled = true;
+  autoCompleting = true;
+  const delay = Math.floor(8000 / empties.length); // spread evenly across 8s
+
+  empties.forEach(({r, c}, i) => {
+    setTimeout(() => {
+      userGrid[r][c] = solution[r][c];
+      pencilGrid[r][c] = new Set();
+      clearPencilInPeers(r, c, solution[r][c]);
+      const cell = getCellEl(r, c);
+      updateCellDisplay(cell, r, c);
+      cell.classList.remove('auto-fill');
+      void cell.offsetWidth; // force reflow to restart animation
+      cell.classList.add('auto-fill');
+      setTimeout(() => cell.classList.remove('auto-fill'), 500);
+      updateCellsLeft();
+      if (i === empties.length - 1) {
+        autoCompleting = false;
+        saveAutosave();
+        // Now flash all completed symbols
+        document.querySelectorAll('.num-btn[data-sym]').forEach(btn => {
+          const v = +btn.dataset.sym;
+          if (completedNums.has(v)) {
+            document.querySelectorAll('.cell').forEach(el => {
+              const cr = +el.dataset.r, cc = +el.dataset.c;
+              const cv = puzzle[cr][cc] !== 0 ? puzzle[cr][cc] : userGrid[cr][cc];
+              if (cv === v) {
+                el.classList.remove('complete-flash');
+                void el.offsetWidth;
+                el.classList.add('complete-flash');
+                setTimeout(() => el.classList.remove('complete-flash'), 800);
+              }
+            });
+          }
+        });
+        if (!gameOver && checkWin()) showWin();
       }
-    }
-  updateCellsLeft();
-  if (!gameOver && checkWin()) showWin();
+    }, i * delay);
+  });
 }
 
 // ===== WIN / GAMEOVER =====
@@ -976,6 +1087,7 @@ function resetBoard() {
   selectedCell = null;
   updateCellsLeft();
   startTimer();
+  saveAutosave();
 }
 
 function newGame() {
@@ -994,6 +1106,9 @@ function newGame() {
   hideAllModals();
   updateBestTimeDisplay();
   if (paused) togglePause();
+  // Persist immediately, so a fresh puzzle survives closing the tab
+  // before the first move is made.
+  saveAutosave();
 }
 
 // ===== PENCIL =====
@@ -1012,7 +1127,7 @@ function updateCellsLeft() {
       if (puzzle[r][c] === 0 && userGrid[r][c] !== solution[r][c]) left++;
   document.getElementById('cells-left').textContent = left;
   const autoBtn = document.getElementById('autocomplete-btn');
-  if (autoBtn) autoBtn.disabled = !(left > 0 && left < 39);
+  if (autoBtn) autoBtn.disabled = !(left > 0 && left < 53);
   updateNumPad();
 }
 
@@ -1030,6 +1145,7 @@ function updateNumPad() {
     // Flash all cells with this value if newly completed
     if (isComplete && !completedNums.has(v)) {
       completedNums.add(v);
+      if (autoCompleting || suppressCompleteFlash) return;
       document.querySelectorAll('.cell').forEach(el => {
         const r = +el.dataset.r, c = +el.dataset.c;
         const cv = puzzle[r][c] !== 0 ? puzzle[r][c] : userGrid[r][c];
@@ -1046,16 +1162,22 @@ function updateNumPad() {
 }
 
 // ===== TIMER =====
-function startTimer() {
-  stopTimer(); seconds = 0;
-  document.getElementById('timer').textContent = '00:00';
+function updateTimerDisplay() {
+  const m = Math.floor(seconds/60).toString().padStart(2,'0');
+  const s = (seconds%60).toString().padStart(2,'0');
+  document.getElementById('timer').textContent = `${m}:${s}`;
+}
+function startTimer(from = 0) {
+  stopTimer();
+  seconds = from;
+  updateTimerDisplay();
   timerInterval = setInterval(() => {
-    if (!paused) {
-      seconds++;
-      const m = Math.floor(seconds/60).toString().padStart(2,'0');
-      const s = (seconds%60).toString().padStart(2,'0');
-      document.getElementById('timer').textContent = `${m}:${s}`;
-    }
+    if (paused || gameOver) return;
+    seconds++;
+    updateTimerDisplay();
+    // Persist elapsed time periodically, so closing the tab mid-think
+    // doesn't roll the clock back to the last move.
+    if (seconds % 5 === 0) saveAutosave();
   }, 1000);
 }
 function stopTimer() { clearInterval(timerInterval); }
@@ -1067,6 +1189,7 @@ function togglePause() {
   document.getElementById('btn-pause').classList.toggle('active', paused);
   document.getElementById('btn-pause-icon').textContent = paused ? '▶' : '⏸';
   document.getElementById('btn-pause-label').textContent = paused ? 'Continuar' : 'Pausa';
+  saveAutosave();
 }
 
 // ===== SETTINGS PERSISTENCE =====
@@ -1098,9 +1221,16 @@ function loadSettings() {
   } catch(e) {}
 }
 
-// ===== FONT ADJUST =====
+// ===== ZOOM / FONT ADJUST =====
 function changeFont(dir) {
-  fontAdjust = Math.max(-12, Math.min(12, fontAdjust + dir));
+  const min = Math.round((ZOOM_MIN - 1) / ZOOM_STEP);
+  const max = Math.round((ZOOM_MAX - 1) / ZOOM_STEP);
+  fontAdjust = Math.max(min, Math.min(max, fontAdjust + dir));
+  recalcCellSize();
+  saveSettings();
+}
+function resetZoom() {
+  fontAdjust = 0;
   recalcCellSize();
   saveSettings();
 }
@@ -1324,31 +1454,33 @@ function restoreAutosave() {
     }
     document.getElementById('board').classList.remove('locked');
     updateLivesDisplay();
+    // Symbols already finished before the break shouldn't re-flash on load
+    suppressCompleteFlash = true;
     renderBoard();
-    // Restore timer (start from saved seconds)
-    stopTimer();
-    document.getElementById('timer').textContent =
-      Math.floor(seconds/60).toString().padStart(2,'0') + ':' +
-      (seconds%60).toString().padStart(2,'0');
-    timerInterval = setInterval(() => {
-      if (!paused) {
-        seconds++;
-        document.getElementById('timer').textContent =
-          Math.floor(seconds/60).toString().padStart(2,'0') + ':' +
-          (seconds%60).toString().padStart(2,'0');
-      }
-    }, 1000);
+    suppressCompleteFlash = false;
+    // Restore timer, continuing from the saved elapsed time
+    startTimer(seconds);
     updateBestTimeDisplay();
     return true;
   } catch(e) { return false; }
 }
 
+// Save when the player leaves. pagehide/visibilitychange are the only
+// events iOS Safari fires reliably — beforeunload is not dependable there.
+window.addEventListener('pagehide', saveAutosave);
+document.addEventListener('visibilitychange', () => {
+  if (document.visibilityState === 'hidden') saveAutosave();
+});
+
 // ===== INIT =====
+// Order matters: recalcCellSize() measures where the board starts, so the
+// toolbar has to be sized first or the board is fitted to a bogus height.
 loadSettings();
+syncBarWidth();
 recalcCellSize();
-window.addEventListener('resize', () => { recalcCellSize(); syncBarWidth(); });
+window.addEventListener('resize', () => { syncBarWidth(); recalcCellSize(); });
 // Also re-run after fonts load (can affect layout)
-document.fonts && document.fonts.ready.then(() => { recalcCellSize(); syncBarWidth(); });
+document.fonts && document.fonts.ready.then(() => { syncBarWidth(); recalcCellSize(); });
 
 updateScoreDisplay();
 updateStreakDisplay();
@@ -1358,6 +1490,15 @@ if (!restoreAutosave()) {
   newGame();
 }
 syncBarWidth();
+recalcCellSize();
+// Final pass once the browser has laid everything out
+requestAnimationFrame(() => { syncBarWidth(); recalcCellSize(); });
+// A page painted while hidden can report a 0×0 viewport, which would leave the
+// board stuck at its minimum size. Re-fit as soon as real dimensions arrive.
+if (window.ResizeObserver) {
+  new ResizeObserver(() => { syncBarWidth(); recalcCellSize(); })
+    .observe(document.documentElement);
+}
 
 // Show tutorial on first visit
 try {
@@ -1386,8 +1527,43 @@ function installApp() {
 window.addEventListener('appinstalled', () => {
   document.getElementById('install-bar').style.display = 'none';
 });
+function dismissInstallBar() {
+  document.getElementById('install-bar').style.display = 'none';
+  try { localStorage.setItem('hexadoku_ios_hint_dismissed', '1'); } catch(e) {}
+}
+// iOS Safari never fires beforeinstallprompt, so without this the install
+// banner is invisible on exactly the devices we most want it on.
+function iosInstallHint() {
+  const ua = navigator.userAgent;
+  const isIOS = /iPad|iPhone|iPod/.test(ua) ||
+                (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1);
+  const standalone = window.navigator.standalone === true ||
+                     window.matchMedia('(display-mode: standalone)').matches;
+  if (!isIOS || standalone) return;
+  try { if (localStorage.getItem('hexadoku_ios_hint_dismissed')) return; } catch(e) {}
+  const bar = document.getElementById('install-bar');
+  document.getElementById('install-text').textContent =
+    '📲 Instala o Hexadoku: toca em Partilhar e depois "Adicionar ao Ecrã Principal".';
+  document.getElementById('install-yes').style.display = 'none';
+  document.getElementById('install-no').textContent = 'Fechar';
+  bar.style.display = 'flex';
+}
+// #install-bar is markup that comes after this script, so wait for the DOM.
+window.addEventListener('DOMContentLoaded', iosInstallHint);
+
 // Register service worker
 if ('serviceWorker' in navigator) {
+  // If a new worker takes over an already-controlled page, the page is still
+  // showing the old build — reload once so the update lands in a single visit.
+  // The autosave above means the in-progress game survives the reload.
+  const hadController = !!navigator.serviceWorker.controller;
+  let swReloading = false;
+  navigator.serviceWorker.addEventListener('controllerchange', () => {
+    if (!hadController || swReloading) return;
+    swReloading = true;
+    saveAutosave();
+    location.reload();
+  });
   window.addEventListener('load', () => {
     navigator.serviceWorker.register('sw.js').catch(() => {});
   });
@@ -1396,10 +1572,10 @@ if ('serviceWorker' in navigator) {
 
 <!-- Install Banner -->
 <div id="install-bar" style="display:none; position:fixed; bottom:0; left:0; right:0; background:#1e2130; border-top:2px solid #e8ff5a; padding:12px 16px; z-index:200; font-family:'Space Mono',monospace; font-size:0.72rem; color:#f0f0f0; align-items:center; justify-content:space-between; gap:10px; flex-wrap:wrap;">
-  <span>📲 Instala o Hexadoku no teu ecrã inicial!</span>
+  <span id="install-text">📲 Instala o Hexadoku no teu ecrã inicial!</span>
   <div style="display:flex;gap:8px;">
-    <button onclick="installApp()" style="background:#e8ff5a;color:#000;border:none;padding:7px 14px;border-radius:4px;font-family:inherit;font-weight:700;cursor:pointer;font-size:0.72rem;">Instalar</button>
-    <button onclick="document.getElementById('install-bar').style.display='none'" style="background:transparent;color:#5a5e72;border:1px solid #2a2d3e;padding:7px 14px;border-radius:4px;font-family:inherit;cursor:pointer;font-size:0.72rem;">Agora não</button>
+    <button id="install-yes" onclick="installApp()" style="background:#e8ff5a;color:#000;border:none;padding:7px 14px;border-radius:4px;font-family:inherit;font-weight:700;cursor:pointer;font-size:0.72rem;">Instalar</button>
+    <button id="install-no" onclick="dismissInstallBar()" style="background:transparent;color:#5a5e72;border:1px solid #2a2d3e;padding:7px 14px;border-radius:4px;font-family:inherit;cursor:pointer;font-size:0.72rem;">Agora não</button>
   </div>
 </div>
 </body>
